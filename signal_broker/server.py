@@ -37,7 +37,7 @@ def handle_client(conn, addr):
 
 def serve():
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # allow reuse shortly after close
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # allow address reuse shortly after close
         s.bind((HOST, PORT))
         s.listen()
         while True:
