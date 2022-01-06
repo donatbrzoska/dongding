@@ -2,7 +2,7 @@ import socket
 import sys
 
 HOST = 'localhost'
-PORT = 22222
+PORT = 22223
 SIGNAL_BYTE = b'\x01'
 
 s = None

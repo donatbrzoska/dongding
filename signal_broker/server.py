@@ -1,67 +1,82 @@
 import socket
-import select
+import time
 from threading import Thread
 
 HOST = ''
-PORT = 22222
+SIGNAL_SOURCE_PORT = 22222
+SIGNAL_SINK_PORT = 22223
 
 SIGNAL_BYTE = b'\x01'
-ASSUME_SIGNAL_SINK_AFTER = 5
 
-connected_clients = []
+connected_sink_clients = []
 threads = []
+interrupted = False
 
 def broadcast_signal():
-    print(f"Broadcasting ...")
-    for conn, addr in connected_clients:
+    for conn, addr in connected_sink_clients:
+        print(f"Sending signal to {addr}")
         try:
             conn.send(SIGNAL_BYTE)
         except Exception as e:
             print(f"Error for {addr}: {e}")
             print(f"Removing {addr} from signal sinks")
-            connected_clients.remove((conn, addr))
+            connected_sink_clients.remove((conn, addr))
 
-def handle_client(conn, addr):
-    print(f"Handle client {addr}")
-    data_ready = select.select([conn], [], [], ASSUME_SIGNAL_SINK_AFTER)[0]
-    if data_ready:
-        data = conn.recv(1)
-        if data == SIGNAL_BYTE:
-            print(f"Received signal: {data}")
-            broadcast_signal()
-        else:
-            print(f"Received junk: {data}")
-    else:
-        print(f"Adding {addr} to signal sinks")
-        connected_clients.append((conn, addr))
+def handle_source_client(conn, addr):
+    with conn:
+        while not interrupted:
+            try:
+                data = conn.recv(1)
+            except socket.timeout:
+                pass
+            else:
+                if data == SIGNAL_BYTE:
+                    print(f"Received signal from {addr}: {data}")
+                    broadcast_signal()
 
-def serve():
+def handle_sink_client(conn, addr):
+    print(f"Adding {addr} to signal sinks")
+    connected_sink_clients.append((conn, addr))
+
+def serve(port, client_handler):
+    socket.setdefaulttimeout(0.2)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # allow address reuse shortly after close
-        s.bind((HOST, PORT))
+        s.bind((HOST, port))
         s.listen()
-        while True:
+        while not interrupted:
             try:
                 conn, addr = s.accept()
-                t = Thread(target=handle_client, args=(conn, addr, ))
+            except socket.timeout:
+                pass
+            else:
+                print(f"Handle client {addr}")
+                t = Thread(target=client_handler, args=(conn, addr, ))
                 t.start()
                 threads.append(t)
 
                 for t in threads:
                     if not t.is_alive():
                         threads.remove(t)
-            except KeyboardInterrupt:
-                break
 
 if __name__ == "__main__":
     print("Starting server")
-    serve()
+    serve_sink_thread = Thread(target=serve, args=(SIGNAL_SINK_PORT, handle_sink_client,))
+    serve_source_thread = Thread(target=serve, args=(SIGNAL_SOURCE_PORT, handle_source_client,))
+    serve_sink_thread.start()
+    serve_source_thread.start()
 
-    print("Shutting down")
-    print(" ... Waiting for threads to finish")
-    for t in threads:
-        t.join()
+    while True:
+        try:
+            time.sleep(1)
+        except KeyboardInterrupt:
+            interrupted = True
+            break
 
+    print("\nShutting down")
+    print("... Waiting for threads to finish")
+    serve_sink_thread.join()
+    serve_source_thread.join()
     print("... Closing sockets")
-    for conn, addr in connected_clients:
+    for conn, addr in connected_sink_clients:
         conn.close()

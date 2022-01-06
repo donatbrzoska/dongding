@@ -1,5 +1,6 @@
 import socket
 import sys
+import time
 
 HOST = 'localhost'
 PORT = 22222
@@ -27,5 +28,7 @@ if s is None:
 
 print('Connected')
 with s:
-    s.send(SIGNAL_BYTE)
-    print(f"Sent {SIGNAL_BYTE}")
+    while True:
+        time.sleep(2)
+        s.send(SIGNAL_BYTE)
+        print(f"Sent {SIGNAL_BYTE}")
