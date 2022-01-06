@@ -46,6 +46,10 @@ def serve():
                 t = Thread(target=handle_client, args=(conn, addr, ))
                 t.start()
                 threads.append(t)
+
+                for t in threads:
+                    if not t.is_alive():
+                        threads.remove(t)
             except KeyboardInterrupt:
                 break
 
