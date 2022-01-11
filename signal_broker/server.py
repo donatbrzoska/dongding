@@ -6,17 +6,18 @@ HOST = ''
 SIGNAL_SOURCE_PORT = 22222
 SIGNAL_SINK_PORT = 22223
 
-SIGNAL_BYTE = b'\x01'
+DONG_DING_BYTE = b'\x01'
+FOOD_READY_BYTE = b'\x02'
 
 connected_sink_clients = []
 threads = []
 interrupted = False
 
-def broadcast_signal():
+def broadcast_signal(data):
     for conn, addr in connected_sink_clients:
         print(f"Sending signal to {addr}")
         try:
-            conn.send(SIGNAL_BYTE)
+            conn.send(data)
         except Exception as e:
             print(f"Error for {addr}: {e}")
             print(f"Removing {addr} from signal sinks")
@@ -30,9 +31,9 @@ def handle_source_client(conn, addr):
             except socket.timeout:
                 pass
             else:
-                if data == SIGNAL_BYTE:
+                if data == DONG_DING_BYTE or data == FOOD_READY_BYTE:
                     print(f"Received signal from {addr}: {data}")
-                    broadcast_signal()
+                    broadcast_signal(data)
 
 def handle_sink_client(conn, addr):
     print(f"Adding {addr} to signal sinks")

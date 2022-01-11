@@ -3,7 +3,8 @@ import sys
 
 HOST = 'localhost'
 PORT = 22223
-SIGNAL_BYTE = b'\x01'
+DONG_DING_BYTE = b'\x01'
+FOOD_READY_BYTE = b'\x02'
 
 s = None
 for res in socket.getaddrinfo(HOST, PORT, socket.AF_UNSPEC, socket.SOCK_STREAM):
@@ -29,5 +30,7 @@ print('Connected')
 with s:
     while True:
         data = s.recv(1)
-        if data == SIGNAL_BYTE:
+        if data == DONG_DING_BYTE:
             print("DONG DING")
+        elif data == FOOD_READY_BYTE:
+            print("Food is ready!")
