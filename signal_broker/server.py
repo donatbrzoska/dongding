@@ -30,6 +30,8 @@ def handle_source_client(conn, addr):
                 data = conn.recv(1)
             except socket.timeout:
                 pass
+            except ConnectionResetError:
+                break
             else:
                 if data == DONG_DING_BYTE or data == FOOD_READY_BYTE:
                     print(f"Received signal from {addr}: {data}")
