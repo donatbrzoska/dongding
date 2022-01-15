@@ -7,10 +7,10 @@ public class SoundPlayer {
 
     public enum Sound {
         DOORBELL("/doorbell.wav"),
-        MEALBELL("/meal_prepared_bell.wav");
+        MEALBELL("/mealpreparedbell.wav");
 
         private final String resourcePath;
-        private Sound(String resourcePath) {
+        Sound(String resourcePath) {
             this.resourcePath = resourcePath;
         }
 
@@ -29,7 +29,7 @@ public class SoundPlayer {
                     clip.open(inputStream);
                     clip.start();
                 } else {
-                    System.err.println("Unable to load sound!");
+                    System.err.println("Unable to load sound '" + sound.resourcePath + "'!");
                 }
             } catch (Exception e) {
                 e.printStackTrace();
